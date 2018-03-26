@@ -1,18 +1,24 @@
 #include <stdio.h>
 
-void read_file(char* s)
+#define REQ_ARGS 3
+
+void read_write_file(char* in, char* out)
 {
-	FILE *fp = fopen(s, "rb");
+	FILE *fp = fopen(in, "rb");
+	FILE *fpout = fopen(out, "w");
 	unsigned char buffer;
 	unsigned int i = 0;
 	while(fread(&buffer, 1, 1, fp) == 1)
 	{
 		if (i % 0x20 == 0)
 		{
-			printf("\n");
-			printf("ADDR %08X : ", i);
+			if (i != 0)
+			{
+				fprintf(fpout, "\n");
+			}
+			fprintf(fpout, "ADDR %08X : ", i);
 		}
-		printf("%02X ", buffer);
+		fprintf(fpout, "%02X ", buffer);
 		i++;
 	}
 	fclose(fp);
@@ -20,22 +26,21 @@ void read_file(char* s)
 
 int main(int argc, char** argv)
 {
-	if (argc != 2)
+	if (argc != REQ_ARGS)
 	{
-		if (argc < 2)
+		if (argc < REQ_ARGS)
 		{
-			fprintf(stderr, "Error: No file argument\n");
+			fprintf(stderr, "Error: Missing arguments\n");
 		}
-		else if (argc > 2)
+		else if (argc > REQ_ARGS)
 		{
-			fprintf(stderr, "Error: More than one argument (give just a file argument)\n");
+			fprintf(stderr, "Error: Too many arguments\n");
 		}
 		return -1;
 	}
 	else
 	{
-		printf("%s\n", argv[1]);
-		read_file(argv[1]);
+		read_write_file(argv[1], argv[2]);
 	}
 	return 0;
 }

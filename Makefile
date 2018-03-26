@@ -1,5 +1,6 @@
 all: gbdis.c
-	gcc gbdis.c -o gbdis
+	@mkdir -p build
+	gcc gbdis.c -o ./build/gbdis
 
 clean:
-	rm gbdis
+	rm -r ./build
