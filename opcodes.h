@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 int write_opcode_str(int fd, unsigned char* bytes);
 void write_all_opcodes(int fd, unsigned char* bytes, int len);

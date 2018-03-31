@@ -44,7 +44,7 @@ void read_write_file(char* in, char* out)
 	//char* out_addr = mmap(0, sb.st_size*20, PROT_WRITE, MAP_PRIVATE, fd_out, 0);
 
 	memcpy(header, in_addr + HDR_START, HDR_END - HDR_START);
-	memcpy(data_ptr, in_addr + HDR_END, sb.st_size - HDR_END);
+	memcpy(data_ptr, in_addr + HDR_END + 1, sb.st_size -1 - HDR_END);
 
 	cart_header_parse(header);
 
