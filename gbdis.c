@@ -1,49 +1,65 @@
 #include <stdio.h>
+#include <fcntl.h>
 #include "header.h"
 #include <string.h>
 #include "opcodes.h"
+#include <sys/mman.h>
+#include <err.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define REQ_ARGS 3
 
 void read_write_file(char* in, char* out)
 {
-	FILE *fp = fopen(in, "rb");
-	FILE *fpout = fopen(out, "w");
+	//FILE *fpout = fopen(out, "w");
 	unsigned char buffer;
 	unsigned char header[HDR_END - HDR_START];
 
-	fseek(fp, 0L, SEEK_END);
-	long int size = ftell(fp);
-	rewind(fp);
-	unsigned char* data_ptr = malloc(size - HDR_END);
+	int fd = open(in, O_RDONLY);
+	if (fd == -1)
+	{
+		err(1, "%s", in);
+	}
+
+	int fd_out = open(out, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fd_out == -1)
+	{
+		err(1, "%s", out);
+	}
+
+	struct stat sb;
+	if (fstat(fd, &sb) == -1)
+	{
+		err(1, 0);
+	}
+
+	unsigned char* data_ptr = malloc(sb.st_size - HDR_END);
 
 	int i = 0;
 	int len = 0;
-	while(fread(&buffer, 1, 1, fp) == 1)
-	{
-		if (i > HDR_START && i <= HDR_END)
-		{
-			memcpy(header + i-(HDR_START + 1), &buffer, 1);
-		}
-		else if (i > HDR_END)
-		{
-			memcpy(data_ptr + len, &buffer, 1);
-			len++;
-		}
-		i++;
-	}
+
+	char* in_addr = mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	
+	//char* out_addr = mmap(0, sb.st_size*20, PROT_WRITE, MAP_PRIVATE, fd_out, 0);
+
+	memcpy(header, in_addr + HDR_START, HDR_END - HDR_START);
+	memcpy(data_ptr, in_addr + HDR_END, sb.st_size - HDR_END);
 
 	cart_header_parse(header);
 
 	char* str = cart_header_str();
-	fprintf(fpout, "%s", str);
+	dprintf(fd_out, "%s", str);
 
-	write_all_opcodes(fpout, data_ptr, len);
+	write_all_opcodes(fd_out, data_ptr, sb.st_size - HDR_END);
 
 	free(cart_header_ptr);
 	free(str);
 	free(data_ptr);
-	fclose(fp);
+
+	munmap(in_addr, sb.st_size);
+
+	close(fd);
 }
 
 
@@ -54,11 +70,11 @@ int main(int argc, char** argv)
 	{
 		if (argc < REQ_ARGS)
 		{
-			fprintf(stderr, "Error: Missing arguments\n");
+			errx(1, "Error: Missing arguments\n");
 		}
 		else if (argc > REQ_ARGS)
 		{
-			fprintf(stderr, "Error: Too many arguments\n");
+			errx(1, "Error: Too many arguments\n");
 		}
 		return -1;
 	}
